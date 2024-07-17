@@ -1,6 +1,8 @@
 const std = @import("std");
+const tsid = @import("root.zig");
 
 pub fn main() !void {
+    std.debug.print("{d}", .{tsid.getTimeMillisSinceTsidEpoch()});
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
 
