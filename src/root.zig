@@ -3,16 +3,96 @@ const std = @import("std");
 const testing = std.testing;
 const time = std.time;
 const log = std.log;
+const random = std.crypto.random;
+const atomic = std.atomic;
 
 // TSID Epoch 2020-01-01T00:00:00.000Z
-const tsid_epoch_milliseconds: u64 = 1577836800000;
+const TSID_EPOCH_MILLIS = 1577836800000;
+const RANDOM_BITS = 22;
+const RANDOM_MASK = 0x003fffff;
+
+// Node bits
+const NODE_BITS_256 = 8;
+const NODE_BITS_1024 = 10;
+const NODE_BITS_4096 = 12;
+
+// Provide fns that accept
+// - IPv4
+// - IPv6
+// Convert identifiers into node_id
+
+const Tsid = struct {
+    node: u32,
+    node_bits: u8,
+    node_mask: u64,
+    node_val: u64,
+    counter_bits: u8,
+    counter_mask: u64,
+    counter: atomic.Value(u64),
+
+    fn init(node_id: u32, comptime node_bits: u8) Tsid {
+        const counter_bits: u8 = RANDOM_BITS - node_bits;
+        const counter_mask: u64 = RANDOM_MASK >> node_bits;
+
+        const node_mask = RANDOM_MASK >> counter_bits;
+        const node = node_id & node_mask;
+
+        return Tsid{
+            .node = node,
+            .node_bits = node_bits,
+            .node_mask = node_mask,
+            .node_val = node << counter_bits,
+
+            .counter_bits = counter_bits,
+            .counter_mask = counter_mask,
+            .counter = atomic.Value(u64).init(0),
+        };
+    }
+
+    fn init_256_nodes(node_id: u32) Tsid {
+        return init(node_id, NODE_BITS_256);
+    }
+
+    fn init_1024_nodes(node_id: u32) Tsid {
+        return init(node_id, NODE_BITS_1024);
+    }
+
+    fn init_4096_nodes(node_id: u32) Tsid {
+        return init(node_id, NODE_BITS_4096);
+    }
+
+    fn create(self: *Tsid) u64 {
+        const current_time: u64 = getTimeMillisSinceTsidEpoch() << RANDOM_BITS;
+        const counter: u64 = self.increaseCounter() & self.counter_mask;
+        const tsid = current_time | self.node_val | counter;
+
+        return tsid;
+    }
+
+    fn increaseCounter(self: *Tsid) u64 {
+        // No ordering necessary; just updating a counter.
+        return self.counter.fetchAdd(1, .monotonic);
+    }
+};
+
+test "Tsid creates different values each time" {
+    var tsid = Tsid.init_256_nodes(1);
+
+    var i: usize = 0;
+    while (i < 100) : (i += 1) {
+        const tsid1 = tsid.create();
+        const tsid2 = tsid.create();
+
+        try testing.expect(tsid1 != tsid2);
+    }
+}
 
 pub fn getTimeMillisSinceTsidEpoch() u64 {
     const now: u64 = @intCast(time.milliTimestamp());
-    return now - tsid_epoch_milliseconds;
+    return now - TSID_EPOCH_MILLIS;
 }
 
-test "UNIX Epoch is after getTimeMilisSinceTsidEpoch" {
+test "UNIX Epoch is after getTimeMillisSinceTsidEpoch" {
     const unix_epoch = time.milliTimestamp();
     const time_tsid = getTimeMillisSinceTsidEpoch();
 
