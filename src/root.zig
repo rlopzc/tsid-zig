@@ -73,7 +73,34 @@ const Tsid = struct {
         // No ordering necessary; just updating a counter.
         return self.counter.fetchAdd(1, .monotonic);
     }
+
+    fn getTimeMillisSinceTsidEpoch() u64 {
+        const now: u64 = @intCast(time.milliTimestamp());
+        return now - TSID_EPOCH_MILLIS;
+    }
 };
+
+test "Tsid for 256 nodes, bits and masks are correctly set" {
+    // |------------------------------------------|----------|------------|
+    //        time (msecs since 2020-01-01)           node       counter
+    //                 42 bits                       8 bits      14 bits
+    const tsid = Tsid.init_256_nodes(1);
+
+    // Node ID = 1
+    try testing.expect(tsid.node == 1);
+    // 256 nodes = 8 bits
+    try testing.expect(tsid.node_bits == 8);
+    // 0x003fffff >> 14. Shifted right cause there's no need for a bigger mask for all possible nodes (8 bits).
+    try testing.expect(tsid.node_mask == 0x000000ff);
+    // node << 14. Shifted left so counter can accomodate all of it's bits.
+    try testing.expect(tsid.node_val == 0x0000000000004000);
+    // counter_bits = 14 (random_bits - 8)
+    try testing.expect(tsid.counter_bits == 14);
+    // 0x003fffff >> 8. Shifted right cause there's no need for a bigger mask for all possible counts (14 bits).
+    try testing.expect(tsid.counter_mask == 0x00003fff);
+    // counter starts at 0.
+    try testing.expect(tsid.counter.load(.monotonic) == 0);
+}
 
 test "Tsid creates different values each time" {
     var tsid = Tsid.init_256_nodes(1);
@@ -87,14 +114,9 @@ test "Tsid creates different values each time" {
     }
 }
 
-pub fn getTimeMillisSinceTsidEpoch() u64 {
-    const now: u64 = @intCast(time.milliTimestamp());
-    return now - TSID_EPOCH_MILLIS;
-}
-
 test "UNIX Epoch is after getTimeMillisSinceTsidEpoch" {
     const unix_epoch = time.milliTimestamp();
-    const time_tsid = getTimeMillisSinceTsidEpoch();
+    const time_tsid = Tsid.getTimeMillisSinceTsidEpoch();
 
     try testing.expect(unix_epoch > time_tsid);
 }
