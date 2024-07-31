@@ -16,10 +16,9 @@ const NODE_BITS_256 = 8;
 const NODE_BITS_1024 = 10;
 const NODE_BITS_4096 = 12;
 
-// Provide fns that accept
+// Provide fns that accept as node_id:
 // - IPv4
 // - IPv6
-// Convert identifiers into node_id
 
 const Tsid = struct {
     node_id: u32,
@@ -29,6 +28,7 @@ const Tsid = struct {
     counter_bits: u8,
     counter_mask: u64,
     counter: atomic.Value(u64),
+    last_time: u64,
 
     fn init(node_id: u32, comptime node_bits: u8) Tsid {
         const counter_bits: u8 = RANDOM_BITS - node_bits;
@@ -47,6 +47,8 @@ const Tsid = struct {
             .counter_bits = counter_bits,
             .counter_mask = counter_mask,
             .counter = atomic.Value(u64).init(counter),
+
+            .last_time = getTimeMillisSinceTsidEpoch(),
         };
     }
 
@@ -63,15 +65,23 @@ const Tsid = struct {
     }
 
     fn generate(self: *Tsid) u64 {
-        const current_time: u64 = getTimeMillisSinceTsidEpoch() << RANDOM_BITS;
-        const counter: u64 = self.increaseCounter() & self.counter_mask;
-        const tsid = current_time | self.node | counter;
+        const current_time = getTimeMillisSinceTsidEpoch();
+
+        var counter: u64 = 0;
+        if (current_time <= self.last_time) {
+            counter = self.increaseCounter();
+        } else {
+            counter = self.counter.swap(random.int(u64), .monotonic);
+        }
+        self.last_time = current_time;
+
+        counter &= self.counter_mask;
+        const tsid = (current_time << RANDOM_BITS) | self.node | counter;
 
         return tsid;
     }
 
     fn increaseCounter(self: *Tsid) u64 {
-        // No ordering necessary; just updating a counter.
         return self.counter.fetchAdd(1, .monotonic);
     }
 
@@ -160,7 +170,7 @@ test "Tsid for 4096 nodes, bits and masks are correctly set" {
 }
 
 test "Tsid creates different values each time" {
-    var tsid = Tsid.init_256_nodes(1);
+    var tsid = Tsid.init_1024_nodes(1);
 
     var i: usize = 0;
     while (i < 100) : (i += 1) {
