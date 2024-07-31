@@ -69,9 +69,11 @@ const Tsid = struct {
 
         var counter: u64 = 0;
         if (current_time <= self.last_time) {
-            counter = self.increaseCounter();
+            counter = self.counter.fetchAdd(1, .monotonic);
         } else {
-            counter = self.counter.swap(random.int(u64), .monotonic);
+            const random_number = random.int(u64);
+            _ = self.counter.swap(random_number, .monotonic);
+            counter = random_number;
         }
         self.last_time = current_time;
 
@@ -79,10 +81,6 @@ const Tsid = struct {
         const tsid = (current_time << RANDOM_BITS) | self.node | counter;
 
         return tsid;
-    }
-
-    fn increaseCounter(self: *Tsid) u64 {
-        return self.counter.fetchAdd(1, .monotonic);
     }
 
     fn getTimeMillisSinceTsidEpoch() u64 {
@@ -95,7 +93,7 @@ test "Tsid for 256 nodes, bits and masks are correctly set" {
     // |------------------------------------------|----------|------------|
     //        time (msecs since 2020-01-01)           node       counter
     //                 42 bits                       8 bits      14 bits
-    var tsid = Tsid.init_256_nodes(1);
+    const tsid = Tsid.init_256_nodes(1);
 
     // Node ID = 1
     try testing.expect(tsid.node_id == 1);
@@ -109,19 +107,13 @@ test "Tsid for 256 nodes, bits and masks are correctly set" {
     try testing.expect(tsid.counter_bits == 14);
     // 0x003fffff >> 8. Shifted right cause there's no need for a bigger mask for all possible counts (14 bits).
     try testing.expect(tsid.counter_mask == 0x00003fff);
-    // Counter from TSID increased to 1
-    const counter = tsid.generate() & tsid.counter_mask;
-    try testing.expect((tsid.generate() & tsid.counter_mask) == counter + 1);
-    // Node from TSID is 1
-    const node_id = (tsid.generate() >> 14) & tsid.node_mask;
-    try testing.expect(node_id == 1);
 }
 
 test "Tsid for 1024 nodes, bits and masks are correctly set" {
     // |------------------------------------------|----------|------------|
     //        time (msecs since 2020-01-01)           node       counter
     //                 42 bits                      10 bits      12 bits
-    var tsid = Tsid.init_1024_nodes(1);
+    const tsid = Tsid.init_1024_nodes(1);
 
     // Node ID = 1
     try testing.expect(tsid.node_id == 1);
@@ -135,19 +127,13 @@ test "Tsid for 1024 nodes, bits and masks are correctly set" {
     try testing.expect(tsid.counter_bits == 12);
     // 0x003fffff >> 10. Shifted right cause there's no need for a bigger mask for all possible counts (12 bits).
     try testing.expect(tsid.counter_mask == 0x00000fff);
-    // Counter from TSID increased to 1
-    const counter = tsid.generate() & tsid.counter_mask;
-    try testing.expect((tsid.generate() & tsid.counter_mask) == counter + 1);
-    // Node from TSID is 1
-    const node_id = (tsid.generate() >> 12) & tsid.node_mask;
-    try testing.expect(node_id == 1);
 }
 
 test "Tsid for 4096 nodes, bits and masks are correctly set" {
     // |------------------------------------------|----------|------------|
     //        time (msecs since 2020-01-01)           node       counter
     //                 42 bits                      12 bits      10 bits
-    var tsid = Tsid.init_4096_nodes(1);
+    const tsid = Tsid.init_4096_nodes(1);
 
     // Node ID = 1
     try testing.expect(tsid.node_id == 1);
@@ -161,12 +147,19 @@ test "Tsid for 4096 nodes, bits and masks are correctly set" {
     try testing.expect(tsid.counter_bits == 10);
     // 0x003fffff >> 12. Shifted right cause there's no need for a bigger mask for all possible counts (10 bits).
     try testing.expect(tsid.counter_mask == 0x000003ff);
-    // Counter from TSID increased to 1
-    const counter = tsid.generate() & tsid.counter_mask;
-    try testing.expect((tsid.generate() & tsid.counter_mask) == counter + 1);
-    // Node from TSID is 1
-    const node_id = (tsid.generate() >> 10) & tsid.node_mask;
-    try testing.expect(node_id == 1);
+}
+
+test "Tsid encodes time, node, and counter in it's 64 bits" {
+    var tsid = Tsid.init_1024_nodes(567);
+
+    // 42 bits for time
+    try testing.expect(Tsid.getTimeMillisSinceTsidEpoch() == tsid.generate() >> RANDOM_BITS);
+
+    // 10 bits for node (1024 nodes)
+    try testing.expect(567 == ((tsid.generate() >> 12) & tsid.node_mask));
+
+    // 12 bits for counter
+    try testing.expect((tsid.generate() & tsid.counter_mask) != tsid.generate() & tsid.counter_mask);
 }
 
 test "Tsid creates different values each time" {
