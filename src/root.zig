@@ -37,6 +37,7 @@ const Tsid = struct {
 
         const node_mask = RANDOM_MASK >> counter_bits;
         const node = node_id & node_mask;
+        const counter = random.int(u64);
 
         return Tsid{
             .node_id = node,
@@ -46,7 +47,7 @@ const Tsid = struct {
 
             .counter_bits = counter_bits,
             .counter_mask = counter_mask,
-            .counter = atomic.Value(u64).init(0),
+            .counter = atomic.Value(u64).init(counter),
         };
     }
 
@@ -62,7 +63,7 @@ const Tsid = struct {
         return init(node_id, NODE_BITS_4096);
     }
 
-    fn create(self: *Tsid) u64 {
+    fn generate(self: *Tsid) u64 {
         const current_time: u64 = getTimeMillisSinceTsidEpoch() << RANDOM_BITS;
         const counter: u64 = self.increaseCounter() & self.counter_mask;
         const tsid = current_time | self.node | counter;
@@ -99,14 +100,11 @@ test "Tsid for 256 nodes, bits and masks are correctly set" {
     try testing.expect(tsid.counter_bits == 14);
     // 0x003fffff >> 8. Shifted right cause there's no need for a bigger mask for all possible counts (14 bits).
     try testing.expect(tsid.counter_mask == 0x00003fff);
-    // counter starts at 0.
-    try testing.expect(tsid.counter.load(.monotonic) == 0);
-    // Counter from TSID is 0
-    try testing.expect(tsid.create() & tsid.counter_mask == 0);
     // Counter from TSID increased to 1
-    try testing.expect(tsid.create() & tsid.counter_mask == 1);
+    const counter = tsid.generate() & tsid.counter_mask;
+    try testing.expect((tsid.generate() & tsid.counter_mask) == counter + 1);
     // Node from TSID is 1
-    const node_id = (tsid.create() >> 14) & tsid.node_mask;
+    const node_id = (tsid.generate() >> 14) & tsid.node_mask;
     try testing.expect(node_id == 1);
 }
 
@@ -128,14 +126,11 @@ test "Tsid for 1024 nodes, bits and masks are correctly set" {
     try testing.expect(tsid.counter_bits == 12);
     // 0x003fffff >> 10. Shifted right cause there's no need for a bigger mask for all possible counts (12 bits).
     try testing.expect(tsid.counter_mask == 0x00000fff);
-    // counter starts at 0.
-    try testing.expect(tsid.counter.load(.monotonic) == 0);
-    // Counter from TSID is 0
-    try testing.expect(tsid.create() & tsid.counter_mask == 0);
     // Counter from TSID increased to 1
-    try testing.expect(tsid.create() & tsid.counter_mask == 1);
+    const counter = tsid.generate() & tsid.counter_mask;
+    try testing.expect((tsid.generate() & tsid.counter_mask) == counter + 1);
     // Node from TSID is 1
-    const node_id = (tsid.create() >> 12) & tsid.node_mask;
+    const node_id = (tsid.generate() >> 12) & tsid.node_mask;
     try testing.expect(node_id == 1);
 }
 
@@ -157,14 +152,11 @@ test "Tsid for 4096 nodes, bits and masks are correctly set" {
     try testing.expect(tsid.counter_bits == 10);
     // 0x003fffff >> 12. Shifted right cause there's no need for a bigger mask for all possible counts (10 bits).
     try testing.expect(tsid.counter_mask == 0x000003ff);
-    // counter starts at 0.
-    try testing.expect(tsid.counter.load(.monotonic) == 0);
-    // Counter from TSID is 0
-    try testing.expect(tsid.create() & tsid.counter_mask == 0);
     // Counter from TSID increased to 1
-    try testing.expect(tsid.create() & tsid.counter_mask == 1);
+    const counter = tsid.generate() & tsid.counter_mask;
+    try testing.expect((tsid.generate() & tsid.counter_mask) == counter + 1);
     // Node from TSID is 1
-    const node_id = (tsid.create() >> 10) & tsid.node_mask;
+    const node_id = (tsid.generate() >> 10) & tsid.node_mask;
     try testing.expect(node_id == 1);
 }
 
@@ -173,8 +165,8 @@ test "Tsid creates different values each time" {
 
     var i: usize = 0;
     while (i < 100) : (i += 1) {
-        const tsid1 = tsid.create();
-        const tsid2 = tsid.create();
+        const tsid1 = tsid.generate();
+        const tsid2 = tsid.generate();
 
         try testing.expect(tsid1 != tsid2);
     }
