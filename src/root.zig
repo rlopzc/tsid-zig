@@ -20,7 +20,6 @@ const NODE_BITS_4096 = 12;
 // - IPv4
 // - IPv6
 // Convert identifiers into node_id
-// TODO: counter must be randomly started
 
 const Tsid = struct {
     node_id: u32,
