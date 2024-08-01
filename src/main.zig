@@ -1,8 +1,10 @@
 const std = @import("std");
-const tsid = @import("root.zig");
+const Tsid = @import("root.zig").TsidFactory;
 
 pub fn main() !void {
-    std.debug.print("{d}", .{tsid.getTimeMillisSinceTsidEpoch()});
+    var tsid_g = Tsid.init_256_nodes(1);
+    std.debug.print("{d}\n", .{Tsid.getTimeMillisSinceTsidEpoch()});
+    std.debug.print("{d}\n", .{tsid_g.create()});
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
 
