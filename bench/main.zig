@@ -19,7 +19,7 @@ pub fn main() !void {
     try stdout.print("UUIDv4: {d} UUIDs in {}\n", .{ iterations, std.fmt.fmtDuration(duration) });
 
     i = 0;
-    timer = try std.time.Timer.start();
+    timer.reset();
     while (i < iterations) : (i += 1) {
         const id = uuid.v7.new();
         std.mem.doNotOptimizeAway(id);
@@ -29,7 +29,7 @@ pub fn main() !void {
 
     var tsid_factory = TsidFactory.init_256_nodes(1);
     i = 0;
-    timer = try std.time.Timer.start();
+    timer.reset();
     while (i < iterations) : (i += 1) {
         const id = tsid_factory.create();
         std.mem.doNotOptimizeAway(id);
