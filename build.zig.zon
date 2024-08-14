@@ -27,6 +27,10 @@
             .url = "git+https://github.com/r4gus/uuid-zig#e3d8c4a524b52dee777609b4404c0c234daaafd3",
             .hash = "1220b4deeb4ec1ec3493ea934905356384561b725dba69d1fbf6a25cb398716dd05b",
         },
+        .zul = .{
+            .url = "git+https://github.com/karlseguin/zul#ae0c27350c0db6b460f22cba30b6b0c4a02d1ffd",
+            .hash = "1220457e2c8867f6734520d9b335f01e1d851d6fe7adaa7f6f0756158acaf6c5e87f",
+        },
     },
     .paths = .{
         "build.zig",

@@ -55,6 +55,8 @@ pub fn build(b: *std.Build) void {
     bench_exe.root_module.addImport("tsid", tsid_module);
     const uuid = b.dependency("uuid", .{});
     bench_exe.root_module.addImport("uuid", uuid.module("uuid"));
+    const zul = b.dependency("zul", .{});
+    bench_exe.root_module.addImport("zul", zul.module("zul"));
     b.installArtifact(bench_exe);
 
     // run bench
