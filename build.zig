@@ -44,4 +44,21 @@ pub fn build(b: *std.Build) void {
     const run_tsid_example = b.addRunArtifact(tsid_example_exe);
     const tsid_example_step = b.step("run-example", "Run the TsidFactory example");
     tsid_example_step.dependOn(&run_tsid_example.step);
+
+    // install bench
+    const bench_exe = b.addExecutable(.{
+        .name = "bench",
+        .root_source_file = b.path("bench/main.zig"),
+        .target = target,
+        .optimize = .ReleaseFast,
+    });
+    bench_exe.root_module.addImport("tsid", tsid_module);
+    const uuid = b.dependency("uuid", .{});
+    bench_exe.root_module.addImport("uuid", uuid.module("uuid"));
+    b.installArtifact(bench_exe);
+
+    // run bench
+    const run_bench = b.addRunArtifact(bench_exe);
+    const bench_step = b.step("run-bench", "Run benchmark");
+    bench_step.dependOn(&run_bench.step);
 }
