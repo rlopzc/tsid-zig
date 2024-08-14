@@ -24,6 +24,14 @@ const NODE_BITS_4096 = 12;
 // Counter bits can be at most 22 bits, according to TSID spec.
 const COUNTER_TYPE = u32;
 
+pub const TSID = struct {
+    number: u64,
+
+    pub fn new(number: u64) TSID {
+        return TSID{ .number = number };
+    }
+};
+
 pub const TsidFactory = struct {
     node_id: u32,
     node_bits: u8,
@@ -70,7 +78,7 @@ pub const TsidFactory = struct {
         return init(node_id, NODE_BITS_4096);
     }
 
-    pub fn create(self: *TsidFactory) u64 {
+    pub fn create(self: *TsidFactory) TSID {
         var current_time = getTimeMillisSinceTsidEpoch();
 
         var counter: COUNTER_TYPE = 0;
@@ -87,8 +95,9 @@ pub const TsidFactory = struct {
         counter &= @intCast(self.counter_mask);
         const shifted_time = (current_time << RANDOM_BITS);
 
-        // |-----  time ----|------- node ------| counter |
-        return shifted_time | self.shifted_node | counter;
+        //           |--- time ---|------- node ------| counter |
+        const tsid = shifted_time | self.shifted_node | counter;
+        return TSID.new(tsid);
     }
 
     pub fn getTimeMillisSinceTsidEpoch() u64 {
@@ -173,25 +182,25 @@ test "Tsid encodes time, node, and counter in the 64 bits" {
 
     // 42 bits for time
     // Adjust time millis in case of overflow
-    const tsid_time: u64 = @intCast(factory.create() >> RANDOM_BITS);
+    const tsid_time: u64 = @intCast(factory.create().number >> RANDOM_BITS);
     const time_diff = tsid_time - TsidFactory.getTimeMillisSinceTsidEpoch();
     try testing.expect(time_diff == 0 or time_diff == 1);
 
     // 10 bits for node (1024 nodes)
-    try testing.expect(567 == ((factory.create() >> 12) & factory.node_mask));
+    try testing.expect(567 == ((factory.create().number >> 12) & factory.node_mask));
 
     // 12 bits for counter
-    try testing.expect((factory.create() & factory.counter_mask) != factory.create() & factory.counter_mask);
+    try testing.expect((factory.create().number & factory.counter_mask) != factory.create().number & factory.counter_mask);
 }
 
 test "Tsid creates incremental values each time" {
     var factory = TsidFactory.init_4096_nodes(1);
 
-    var last_id = factory.create();
+    var last_id: TSID = factory.create();
     var i: usize = 0;
     while (i < 100_000) : (i += 1) {
-        const id = factory.create();
-        try testing.expect(last_id < id);
+        const id: TSID = factory.create();
+        try testing.expect(last_id.number < id.number);
         last_id = id;
     }
 }
