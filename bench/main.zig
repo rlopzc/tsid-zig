@@ -1,5 +1,5 @@
 const std = @import("std");
-const TsidFactory = @import("tsid").TsidFactory;
+const TsidFactory = @import("tsid").Factory;
 const uuid = @import("uuid");
 const zul = @import("zul");
 
