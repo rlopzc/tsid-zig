@@ -21,6 +21,12 @@ pub const TSID = struct {
     }
 };
 
+test "TSID new" {
+    const number: u64 = 999;
+
+    try testing.expect(number == TSID.new(number).number);
+}
+
 test "TSID toBytes" {
     var factory = Factory.init_256_nodes(1);
     const tsid = factory.create();
