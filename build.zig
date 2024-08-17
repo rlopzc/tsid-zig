@@ -11,6 +11,10 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    lib.root_module.addAnonymousImport(
+        "chm",
+        .{ .root_source_file = b.path("libs/comptime_hash_map/comptime_hash_map.zig") },
+    );
     b.installArtifact(lib);
 
     // Lib tests
