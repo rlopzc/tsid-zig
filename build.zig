@@ -11,12 +11,6 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    // lib.root_module.addAnonymousImport(
-    //     "chm",
-    //     .{
-    //         .root_source_file = b.path("libs/comptime_hash_map/comptime_hash_map.zig"),
-    //     },
-    // );
     const chm_module = b.createModule(.{
         .root_source_file = b.path("libs/comptime_hash_map/comptime_hash_map.zig"),
         .target = target,
@@ -31,6 +25,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    lib_unit_tests.root_module.addImport("chm", chm_module);
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
 
     const test_step = b.step("test", "Run unit tests");

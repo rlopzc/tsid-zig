@@ -1,5 +1,5 @@
 const std = @import("std");
-const chm = @import("../libs/comptime_hash_map/comptime_hash_map.zig");
+const chm = @import("chm");
 
 const mem = std.mem;
 const Factory = @import("factory.zig").Factory;
