@@ -11,10 +11,18 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    lib.root_module.addAnonymousImport(
-        "chm",
-        .{ .root_source_file = b.path("libs/comptime_hash_map/comptime_hash_map.zig") },
-    );
+    // lib.root_module.addAnonymousImport(
+    //     "chm",
+    //     .{
+    //         .root_source_file = b.path("libs/comptime_hash_map/comptime_hash_map.zig"),
+    //     },
+    // );
+    const chm_module = b.createModule(.{
+        .root_source_file = b.path("libs/comptime_hash_map/comptime_hash_map.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    lib.root_module.addImport("chm", chm_module);
     b.installArtifact(lib);
 
     // Lib tests
