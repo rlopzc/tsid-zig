@@ -31,6 +31,10 @@
             .url = "git+https://github.com/karlseguin/zul#ae0c27350c0db6b460f22cba30b6b0c4a02d1ffd",
             .hash = "1220457e2c8867f6734520d9b335f01e1d851d6fe7adaa7f6f0756158acaf6c5e87f",
         },
+        .comptime_hash_map = .{
+            .url = "git+https://github.com/rlopzc/comptime_hash_map#cce974729753fc80a1168a968d9b3d5b48f2d622",
+            .hash = "12201a64fad9fed8b6033df3c6e7337e3335620dac834f1b2f2acdfcea17555aa5ce",
+        },
     },
     .paths = .{
         "build.zig",

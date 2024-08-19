@@ -2,6 +2,7 @@ const std = @import("std");
 const chm = @import("chm");
 
 const mem = std.mem;
+const fmt = std.fmt;
 const Factory = @import("factory.zig").Factory;
 
 const testing = std.testing;
@@ -58,29 +59,27 @@ pub const TSID = struct {
         return TSID{ .number = mem.bytesToValue(u64, bytes[0..8]) };
     }
 
-    pub fn toString(self: TSID) [13]u8 {
-        var str: [13]u8 = undefined;
+    pub fn toString(self: TSID) ![13]u8 {
+        var adjusted_tsid: [65]u8 = undefined;
+        _ = try fmt.bufPrint(&adjusted_tsid, "{b:0>65}", .{self.number});
 
-        str[0] = CROCKFORD_ALPHABET.get(((self.number >> 60) & MASK));
-        str[1] = CROCKFORD_ALPHABET.get(((self.number >> 55) & MASK));
-        str[2] = CROCKFORD_ALPHABET.get(((self.number >> 50) & MASK));
-        str[3] = CROCKFORD_ALPHABET.get(((self.number >> 45) & MASK));
-        str[4] = CROCKFORD_ALPHABET.get(((self.number >> 40) & MASK));
-        str[5] = CROCKFORD_ALPHABET.get(((self.number >> 35) & MASK));
-        str[6] = CROCKFORD_ALPHABET.get(((self.number >> 30) & MASK));
-        str[7] = CROCKFORD_ALPHABET.get(((self.number >> 25) & MASK));
-        str[8] = CROCKFORD_ALPHABET.get(((self.number >> 20) & MASK));
-        str[9] = CROCKFORD_ALPHABET.get(((self.number >> 15) & MASK));
-        str[10] = CROCKFORD_ALPHABET.get(((self.number >> 10) & MASK));
-        str[11] = CROCKFORD_ALPHABET.get(((self.number >> 5) & MASK));
-        str[12] = CROCKFORD_ALPHABET.get(((self.number) & MASK));
+        var str: [13]u8 = undefined;
+        for (&str, 0..) |*c, i| {
+            const idx = i * 5;
+            const bits = try fmt.parseInt(u8, adjusted_tsid[idx..(idx + 5)], 2);
+
+            c.* = CROCKFORD_ALPHABET.get(@intCast(bits)).?.*;
+        }
+
+        return str;
     }
 };
 
 test "TSID toString" {
+    std.testing.log_level = .debug;
     const tsid = TSID.new(612675597969135455);
 
-    std.debug.print("{any}\n", tsid.toString());
+    std.debug.print("{b}\n{!s}\n", .{ tsid.number, tsid.toString() });
 }
 
 test "TSID new" {
