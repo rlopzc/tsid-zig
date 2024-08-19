@@ -68,7 +68,7 @@ pub const TSID = struct {
             const idx = i * 5;
             const bits = try fmt.parseInt(u8, adjusted_tsid[idx..(idx + 5)], 2);
 
-            c.* = CROCKFORD_ALPHABET.get(@intCast(bits)).?.*;
+            c.* = CROCKFORD_ALPHABET.get(bits).?.*;
         }
 
         return str;
