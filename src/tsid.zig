@@ -76,10 +76,10 @@ pub const TSID = struct {
 };
 
 test "TSID toString" {
-    std.testing.log_level = .debug;
     const tsid = TSID.new(612675597969135455);
+    const tsid_string = try tsid.toString();
 
-    std.debug.print("{b}\n{!s}\n", .{ tsid.number, tsid.toString() });
+    try testing.expectEqualStrings("0H0596Q9R05TZ", &tsid_string);
 }
 
 test "TSID new" {
