@@ -9,6 +9,10 @@ const testing = std.testing;
 
 const MASK = 0b11111;
 
+const ParsingError = error{
+    InvalidLength,
+};
+
 const CROCKFORD_ALPHABET = chm.AutoComptimeHashMap(u8, u8, .{
     .{ 0b00000, '0' },
     .{ 0b00001, '1' },
@@ -44,6 +48,41 @@ const CROCKFORD_ALPHABET = chm.AutoComptimeHashMap(u8, u8, .{
     .{ 0b11111, 'Z' },
 });
 
+const CROCKFORD_ALPHABET_INV = chm.AutoComptimeHashMap(u8, u8, .{
+    .{ '0', 0b00000 },
+    .{ '1', 0b00001 },
+    .{ '2', 0b00010 },
+    .{ '3', 0b00011 },
+    .{ '4', 0b00100 },
+    .{ '5', 0b00101 },
+    .{ '6', 0b00110 },
+    .{ '7', 0b00111 },
+    .{ '8', 0b01000 },
+    .{ '9', 0b01001 },
+    .{ 'A', 0b01010 },
+    .{ 'B', 0b01011 },
+    .{ 'C', 0b01100 },
+    .{ 'D', 0b01101 },
+    .{ 'E', 0b01110 },
+    .{ 'F', 0b01111 },
+    .{ 'G', 0b10000 },
+    .{ 'H', 0b10001 },
+    .{ 'J', 0b10010 },
+    .{ 'K', 0b10011 },
+    .{ 'M', 0b10100 },
+    .{ 'N', 0b10101 },
+    .{ 'P', 0b10110 },
+    .{ 'Q', 0b10111 },
+    .{ 'R', 0b11000 },
+    .{ 'S', 0b11001 },
+    .{ 'T', 0b11010 },
+    .{ 'V', 0b11011 },
+    .{ 'W', 0b11100 },
+    .{ 'X', 0b11101 },
+    .{ 'Y', 0b11110 },
+    .{ 'Z', 0b11111 },
+});
+
 pub const TSID = struct {
     number: u64,
 
@@ -73,6 +112,20 @@ pub const TSID = struct {
 
         return str;
     }
+
+    pub fn fromString(str: []const u8) ParsingError!TSID {
+        if (str.len != 13) {
+            return ParsingError.InvalidLength;
+        }
+        var number: u64 = 0x00000000;
+
+        for (str, 0..) |c, i| {
+            const idx: u6 = @intCast(i * 5);
+            number |= @as(u64, CROCKFORD_ALPHABET_INV.get(c).?.*) << (60 - idx);
+        }
+
+        return TSID{ .number = number };
+    }
 };
 
 test "TSID toString" {
@@ -80,6 +133,20 @@ test "TSID toString" {
     const tsid_string = try tsid.toString();
 
     try testing.expectEqualStrings("0H0596Q9R05TZ", &tsid_string);
+}
+
+test "TSID fromString" {
+    std.testing.log_level = .debug;
+    const tsid = try TSID.fromString("0H0596Q9R05TZ");
+
+    try testing.expectEqual(612675597969135455, tsid.number);
+}
+
+test "TSID fromString returns error" {
+    std.testing.log_level = .debug;
+    const err = TSID.fromString("0101");
+
+    try testing.expectEqual(ParsingError.InvalidLength, err);
 }
 
 test "TSID new" {
