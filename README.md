@@ -8,7 +8,7 @@
 - [ ] Ask for feedback about building a lib in Zig
 - [ ] Blog post!
 - [ ] Release binaries similar to https://github.com/rlopzc/waybar-wise-fx-rate
-- [ ] Verify thread safety from Atomic.value
+- [x] Verify thread safety from Atomic.value
 - [ ] Expose TSID using Zigler for Elixir
 
 ## Useful links
