@@ -104,7 +104,7 @@ pub const Factory = struct {
 // std.testing.log_level = .debug;
 //
 
-test "Tsid for 256 nodes, bits and masks are correctly set" {
+test "256 nodes, bits and masks are correctly set" {
     // |------------------------------------------|----------|------------|
     //        time (msecs since 2020-01-01)           node       counter
     //                 42 bits                       8 bits      14 bits
@@ -126,7 +126,7 @@ test "Tsid for 256 nodes, bits and masks are correctly set" {
     try testing.expect(64 == TIME_BITS + factory.node_bits + factory.counter_bits);
 }
 
-test "Tsid for 1024 nodes, bits and masks are correctly set" {
+test "1024 nodes, bits and masks are correctly set" {
     // |------------------------------------------|----------|------------|
     //        time (msecs since 2020-01-01)           node       counter
     //                 42 bits                       10 bits     12 bits
@@ -148,7 +148,7 @@ test "Tsid for 1024 nodes, bits and masks are correctly set" {
     try testing.expect(64 == TIME_BITS + factory.node_bits + factory.counter_bits);
 }
 
-test "Tsid for 4096 nodes, bits and masks are correctly set" {
+test "4096 nodes, bits and masks are correctly set" {
     // |------------------------------------------|----------|------------|
     //        time (msecs since 2020-01-01)           node       counter
     //                 42 bits                       12 bits     10 bits
@@ -170,7 +170,7 @@ test "Tsid for 4096 nodes, bits and masks are correctly set" {
     try testing.expect(64 == TIME_BITS + factory.node_bits + factory.counter_bits);
 }
 
-test "Tsid encodes time, node, and counter in the 64 bits" {
+test "encodes time, node, and counter in the 64 bits" {
     var factory = Factory.init_1024_nodes(567);
 
     // 42 bits for time
@@ -186,7 +186,7 @@ test "Tsid encodes time, node, and counter in the 64 bits" {
     try testing.expect((factory.create().number & factory.counter_mask) != factory.create().number & factory.counter_mask);
 }
 
-test "Tsid creates incremental values each time" {
+test "creates incremental values each time" {
     var factory = Factory.init_4096_nodes(1);
 
     var last_id: TSID = factory.create();
@@ -203,4 +203,27 @@ test "UNIX Epoch is after getTimeMillisSinceTsidEpoch" {
     const time_tsid = Factory.getTimeMillisSinceTsidEpoch();
 
     try testing.expect(unix_epoch > time_tsid);
+}
+
+fn generateTsidToArray(factory: *Factory, ary: *[100_000]u64, idx: usize) void {
+    ary[idx] = factory.create().number;
+}
+
+test "100k threads create different TSIDs" {
+    const total_threads = 100_000;
+    var factory = Factory.init_4096_nodes(1);
+    var results: [total_threads]u64 = undefined;
+    var threads: [total_threads]std.Thread = undefined;
+
+    for (&threads, 0..) |*thread, i| {
+        thread.* = try std.Thread.spawn(.{}, generateTsidToArray, .{ &factory, &results, i });
+    }
+    for (&threads) |*thread| {
+        thread.*.join();
+    }
+    std.mem.sort(u64, &results, {}, comptime std.sort.asc(u64));
+
+    for (0..(total_threads - 1)) |idx| {
+        try testing.expect(results[idx] < results[idx + 1]);
+    }
 }
