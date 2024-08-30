@@ -98,14 +98,14 @@ pub const TSID = struct {
         return TSID{ .number = mem.bytesToValue(u64, bytes[0..8]) };
     }
 
-    pub fn toString(self: TSID) ![13]u8 {
+    pub fn toString(self: TSID) [13]u8 {
         var adjusted_tsid: [65]u8 = undefined;
-        _ = try fmt.bufPrint(&adjusted_tsid, "{b:0>65}", .{self.number});
+        _ = fmt.bufPrint(&adjusted_tsid, "{b:0>65}", .{self.number}) catch unreachable;
 
         var str: [13]u8 = undefined;
         for (&str, 0..) |*c, i| {
             const idx = i * 5;
-            const bits = try fmt.parseInt(u8, adjusted_tsid[idx..(idx + 5)], 2);
+            const bits = fmt.parseInt(u5, adjusted_tsid[idx..(idx + 5)], 2) catch unreachable;
 
             c.* = CROCKFORD_ALPHABET.get(bits).?.*;
         }
@@ -117,6 +117,7 @@ pub const TSID = struct {
         if (str.len != 13) {
             return ParsingError.InvalidLength;
         }
+
         var number: u64 = 0x00000000;
 
         for (str, 0..) |c, i| {
@@ -128,21 +129,7 @@ pub const TSID = struct {
     }
 };
 
-test "TSID toString" {
-    const tsid = TSID.new(612675597969135455);
-    const tsid_string = try tsid.toString();
-
-    try testing.expectEqualStrings("0H0596Q9R05TZ", &tsid_string);
-}
-
-test "TSID fromString" {
-    std.testing.log_level = .debug;
-    const tsid = try TSID.fromString("0H0596Q9R05TZ");
-
-    try testing.expectEqual(612675597969135455, tsid.number);
-}
-
-test "TSID fromString returns error" {
+test "TSID fromString returns invalid length error" {
     std.testing.log_level = .debug;
     const err = TSID.fromString("0101");
 
@@ -167,4 +154,18 @@ test "TSID fromBytes" {
     const tsid = factory.create();
 
     try testing.expect(tsid.number == TSID.fromBytes(tsid.toBytes()).number);
+}
+
+test "TSID toString" {
+    const tsid = TSID.new(612675597969135455);
+    const tsid_string = tsid.toString();
+
+    try testing.expectEqualStrings("0H0596Q9R05TZ", &tsid_string);
+}
+
+test "TSID fromString" {
+    std.testing.log_level = .debug;
+    const tsid = try TSID.fromString("0H0596Q9R05TZ");
+
+    try testing.expectEqual(612675597969135455, tsid.number);
 }
