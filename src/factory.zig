@@ -205,10 +205,6 @@ test "UNIX Epoch is after getTimeMillisSinceTsidEpoch" {
     try testing.expect(unix_epoch > time_tsid);
 }
 
-fn generateTsidToArray(factory: *Factory, ary: *[100_000]u64, idx: usize) void {
-    ary[idx] = factory.create().number;
-}
-
 test "100k threads create different TSIDs" {
     const total_threads = 100_000;
     var factory = Factory.init_4096_nodes(1);
@@ -226,4 +222,9 @@ test "100k threads create different TSIDs" {
     for (0..(total_threads - 1)) |idx| {
         try testing.expect(results[idx] < results[idx + 1]);
     }
+}
+
+fn generateTsidToArray(factory: *Factory, array: [*]u64, idx: usize) void {
+    std.time.sleep(std.crypto.random.uintLessThan(usize, 1) * std.time.ns_per_s);
+    array[idx] = factory.create().number;
 }
