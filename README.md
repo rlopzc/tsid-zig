@@ -21,7 +21,7 @@ zig fetch --save git+https://github.com/rlopzc/tsid-zig
 In your `build.zig`:
 ```
 const tsid = b.dependency("tsid-zig", .{});
-exe.root_module.addImport("tsid", chm.module("tsid"));
+exe.root_module.addImport("tsid", tsid.module("tsid"));
 ```
 
 ## Usage
@@ -30,7 +30,7 @@ exe.root_module.addImport("tsid", chm.module("tsid"));
 const TSID = @import("tsid").TSID;
 const TsidFactory = @import("tsid").Factory;
 
-// Build a TSID Factory that supports 1024 nodes, with a Node ID = 500
+// Build a TSID Factory supporting 1024 nodes, with a Node ID = 500
 var tsid_factory = TsidFactory.init_1024_nodes(500);
 
 // Generate a TSID
@@ -48,8 +48,8 @@ const tsid_from_str = try TSID.fromString("0H0596Q9R05TZ");
 
 ## Useful links
 
-https://ziggit.dev/t/how-to-package-a-zig-source-module-and-how-to-use-it/3457
-https://github.com/bitwalker/uniq/blob/main/lib/uuid.ex#L307
-https://github.com/E-xyza/zigler
-https://github.com/r4gus/uuid-zig
-https://ziglang.org/documentation/master/std/#std.atomic.Value
+- https://ziggit.dev/t/how-to-package-a-zig-source-module-and-how-to-use-it/3457
+- https://github.com/bitwalker/uniq/blob/main/lib/uuid.ex#L307
+- https://github.com/E-xyza/zigler
+- https://github.com/r4gus/uuid-zig
+- https://ziglang.org/documentation/master/std/#std.atomic.Value
