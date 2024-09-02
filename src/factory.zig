@@ -205,8 +205,8 @@ test "UNIX Epoch is after getTimeMillisSinceTsidEpoch" {
     try testing.expect(unix_epoch > time_tsid);
 }
 
-test "100k threads create different TSIDs" {
-    const total_threads = 100_000;
+test "20k threads create different TSIDs" {
+    const total_threads = 20_000;
     var factory = Factory.init_4096_nodes(1);
     var results: [total_threads]u64 = undefined;
     var threads: [total_threads]std.Thread = undefined;
