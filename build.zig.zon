@@ -35,6 +35,10 @@
             .url = "git+https://github.com/rlopzc/comptime_hash_map#cce974729753fc80a1168a968d9b3d5b48f2d622",
             .hash = "12201a64fad9fed8b6033df3c6e7337e3335620dac834f1b2f2acdfcea17555aa5ce",
         },
+        .zbench = .{
+            .url = "git+https://github.com/hendriknielaender/zbench/#0c595abbd0c9fbd8bb0afe3c5bd832bf9f0aad42",
+            .hash = "1220b19e117897a42abc5e58633766a3be92f9ebade400116afea57957bebe41aed0",
+        },
     },
     .paths = .{
         "build.zig",
