@@ -55,13 +55,13 @@ Here are the results.
 ```
 benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995
 -----------------------------------------------------------------------------------------------------------------------------
-r4gus/uuid v4          65535    14.815ms       226ns ± 156ns          (166ns ... 18.083us)         250ns      250ns      292ns
-r4gus/uuid v7          65535    4.501ms        68ns ± 50ns            (0ns ... 375ns)              83ns       292ns      292ns
-karlseguin/zul UUID v4 65535    14.689ms       224ns ± 145ns          (125ns ... 26.166us)         250ns      250ns      250ns
-karlseguin/zul UUID v7 65535    6.021ms        91ns ± 175ns           (0ns ... 35.375us)           84ns       333ns      334ns
-rlopzc/tsid-zig 256    65535    3.228ms        49ns ± 16ns            (0ns ... 209ns)              42ns       84ns       84ns
-rlopzc/tsid-zig 1024   65535    3.373ms        51ns ± 29ns            (0ns ... 6.166us)            42ns       84ns       84ns
-rlopzc/tsid-zig 4096   65535    3.237ms        49ns ± 28ns            (0ns ... 6.167us)            42ns       84ns       84ns
+r4gus/uuid v4          65535    1.873ms        28ns ± 19ns            (20ns ... 200ns)             30ns       131ns      131ns
+r4gus/uuid v7          65535    3.112ms        47ns ± 22ns            (40ns ... 3.967us)           50ns       150ns      151ns
+karlseguin/zul UUID v4 65535    1.894ms        28ns ± 47ns            (20ns ... 11.131us)          30ns       131ns      131ns
+karlseguin/zul UUID v7 65535    3.846ms        58ns ± 19ns            (50ns ... 3.607us)           60ns       160ns      160ns
+rlopzc/tsid-zig 256    65535    3.453ms        52ns ± 16ns            (50ns ... 4.188us)           60ns       61ns       61ns
+rlopzc/tsid-zig 1024   65535    3.446ms        52ns ± 16ns            (50ns ... 4.028us)           51ns       61ns       61ns
+rlopzc/tsid-zig 4096   65535    3.445ms        52ns ± 19ns            (50ns ... 3.927us)           51ns       61ns       61ns
 ```
 
 ## Useful links
