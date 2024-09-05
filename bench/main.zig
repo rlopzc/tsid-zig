@@ -1,82 +1,83 @@
 const std = @import("std");
+
 const TsidFactory = @import("tsid").Factory;
+
+const zbench = @import("zbench");
 const uuid = @import("uuid");
 const zul = @import("zul");
 
 const iterations = 10_000_000;
 
-pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+// r4gus/uuid
 
-    var i: usize = 0;
-    var duration: u64 = 0;
+fn benchmarkRagusUuidV4(_: std.mem.Allocator) void {
+    _ = uuid.v4.new();
+}
 
-    try stdout.print("r4gus/uuid\n", .{});
-    var timer = try std.time.Timer.start();
-    while (i < iterations) : (i += 1) {
-        const id = uuid.v4.new();
-        std.mem.doNotOptimizeAway(id);
+fn benchmarkRagusUuidV7(_: std.mem.Allocator) void {
+    _ = uuid.v7.new();
+}
+
+// karlseguin/zul
+
+fn benchmarkZulV4(_: std.mem.Allocator) void {
+    _ = zul.UUID.v4();
+}
+
+fn benchmarkZulV7(_: std.mem.Allocator) void {
+    _ = zul.UUID.v7();
+}
+
+// TSID
+
+var benchmark_tsid: BenchmarkTsid = undefined;
+
+fn beforeAll() void {
+    benchmark_tsid.init();
+}
+
+fn benchmarkTsid256(_: std.mem.Allocator) void {
+    _ = benchmark_tsid.tsid256.create();
+}
+
+fn benchmarkTsid1024(_: std.mem.Allocator) void {
+    _ = benchmark_tsid.tsid1024.create();
+}
+
+fn benchmarkTsid4096(_: std.mem.Allocator) void {
+    _ = benchmark_tsid.tsid4096.create();
+}
+
+const BenchmarkTsid = struct {
+    tsid256: TsidFactory,
+    tsid1024: TsidFactory,
+    tsid4096: TsidFactory,
+
+    pub fn init(self: *BenchmarkTsid) void {
+        self.tsid256 = TsidFactory.init_256_nodes(1);
+        self.tsid1024 = TsidFactory.init_1024_nodes(1);
+        self.tsid4096 = TsidFactory.init_4096_nodes(1);
     }
-    duration = timer.read();
-    try stdout.print("UUIDv4: {d} UUIDs in {}\n", .{ iterations, std.fmt.fmtDuration(duration) });
+};
 
-    i = 0;
-    timer.reset();
-    while (i < iterations) : (i += 1) {
-        const id = uuid.v7.new();
-        std.mem.doNotOptimizeAway(id);
-    }
-    duration = timer.read();
-    try stdout.print("UUIDv7: {d} UUIDs in {}\n", .{ iterations, std.fmt.fmtDuration(duration) });
+test "bench" {
+    const benchConfig: zbench.Config = .{
+        .hooks = .{
+            .before_all = beforeAll,
+        },
+    };
+    var bench = zbench.Benchmark.init(std.testing.allocator, benchConfig);
+    defer bench.deinit();
 
-    try stdout.print("\n", .{});
-    try stdout.print("karlseguin/zul\n", .{});
-    i = 0;
-    timer.reset();
-    while (i < iterations) : (i += 1) {
-        const id = zul.UUID.v4();
-        std.mem.doNotOptimizeAway(id);
-    }
-    duration = timer.read();
-    try stdout.print("UUIDv4: {d} UUIDs in {}\n", .{ iterations, std.fmt.fmtDuration(duration) });
+    try bench.add("r4gus/uuid v4", benchmarkRagusUuidV4, .{});
+    try bench.add("r4gus/uuid v7", benchmarkRagusUuidV7, .{});
 
-    i = 0;
-    timer.reset();
-    while (i < iterations) : (i += 1) {
-        const id = zul.UUID.v7();
-        std.mem.doNotOptimizeAway(id);
-    }
-    duration = timer.read();
-    try stdout.print("UUIDv7: {d} UUIDs in {}\n", .{ iterations, std.fmt.fmtDuration(duration) });
+    try bench.add("karlseguin/zul UUID v4", benchmarkZulV4, .{});
+    try bench.add("karlseguin/zul UUID v7", benchmarkZulV7, .{});
 
-    try stdout.print("\n", .{});
-    var tsid_factory = TsidFactory.init_256_nodes(1);
-    i = 0;
-    timer.reset();
-    while (i < iterations) : (i += 1) {
-        const id = tsid_factory.create();
-        std.mem.doNotOptimizeAway(id);
-    }
-    duration = timer.read();
-    try stdout.print("TSID 256:  {d} TSIDs in {}\n", .{ iterations, std.fmt.fmtDuration(duration) });
+    try bench.add("rlopzc/tsid-zig 256", benchmarkTsid256, .{});
+    try bench.add("rlopzc/tsid-zig 1024", benchmarkTsid1024, .{});
+    try bench.add("rlopzc/tsid-zig 4096", benchmarkTsid4096, .{});
 
-    tsid_factory = TsidFactory.init_1024_nodes(1);
-    i = 0;
-    timer.reset();
-    while (i < iterations) : (i += 1) {
-        const id = tsid_factory.create();
-        std.mem.doNotOptimizeAway(id);
-    }
-    duration = timer.read();
-    try stdout.print("TSID 1024: {d} TSIDs in {}\n", .{ iterations, std.fmt.fmtDuration(duration) });
-
-    tsid_factory = TsidFactory.init_4096_nodes(1);
-    i = 0;
-    timer.reset();
-    while (i < iterations) : (i += 1) {
-        const id = tsid_factory.create();
-        std.mem.doNotOptimizeAway(id);
-    }
-    duration = timer.read();
-    try stdout.print("TSID 4096: {d} TSIDs in {}\n", .{ iterations, std.fmt.fmtDuration(duration) });
+    try bench.run(std.io.getStdErr().writer());
 }
