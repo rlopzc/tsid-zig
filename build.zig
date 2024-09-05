@@ -39,6 +39,7 @@ pub fn build(b: *std.Build) void {
         .name = "tsid-example",
         .root_source_file = b.path("examples/tsid_factory.zig"),
         .target = target,
+        .optimize = optimize,
     });
     tsid_example_exe.root_module.addImport("tsid", tsid_module);
     b.installArtifact(tsid_example_exe);
@@ -49,21 +50,23 @@ pub fn build(b: *std.Build) void {
     tsid_example_step.dependOn(&run_tsid_example.step);
 
     // install bench
-    const bench_exe = b.addExecutable(.{
-        .name = "bench",
+    const bench = b.addTest(.{
+        // .name = "bench test",
         .root_source_file = b.path("bench/main.zig"),
         .target = target,
         .optimize = .ReleaseFast,
     });
-    bench_exe.root_module.addImport("tsid", tsid_module);
+    bench.root_module.addImport("tsid", tsid_module);
     const uuid = b.dependency("uuid", .{});
-    bench_exe.root_module.addImport("uuid", uuid.module("uuid"));
+    bench.root_module.addImport("uuid", uuid.module("uuid"));
     const zul = b.dependency("zul", .{});
-    bench_exe.root_module.addImport("zul", zul.module("zul"));
-    b.installArtifact(bench_exe);
+    bench.root_module.addImport("zul", zul.module("zul"));
+    const zbench = b.dependency("zbench", .{});
+    bench.root_module.addImport("zbench", zbench.module("zbench"));
 
     // run bench
-    const run_bench = b.addRunArtifact(bench_exe);
+    const run_bench = b.addRunArtifact(bench);
+    run_bench.has_side_effects = true;
     const bench_step = b.step("run-bench", "Run benchmark");
     bench_step.dependOn(&run_bench.step);
 }
